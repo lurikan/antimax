@@ -2,526 +2,488 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anti Max — Админ-панель</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Anti Max — мессенджер будущего</title>
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; }
-        body { height: 100vh; display: flex; justify-content: center; align-items: center; transition: background 0.2s; }
-        body.light { background: #e6e8ec; }
-        body.dark { background: #0a0a0a; }
-        .app { width: 100%; max-width: 1400px; height: 100vh; display: flex; flex-direction: column; transition: background 0.2s; }
-        body.light .app { background: #ffffff; }
-        body.dark .app { background: #17212b; }
-        .header { display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-bottom: 1px solid; }
-        body.light .header { border-color: #ddd; background: #fff; }
-        body.dark .header { border-color: #242f3d; background: #17212b; }
-        .logo { font-size: 22px; font-weight: bold; background: linear-gradient(45deg, #ff416c, #ff4b2b); -webkit-background-clip: text; background-clip: text; color: transparent; }
-        .user-info { display: flex; gap: 12px; }
-        .tg-btn { background: transparent; border: none; padding: 6px 12px; border-radius: 18px; cursor: pointer; }
-        body.light .tg-btn { color: #0088cc; }
-        body.dark .tg-btn { color: #6ab3f3; }
-        .tabs { display: flex; padding: 0 16px; gap: 8px; border-bottom: 1px solid; overflow-x: auto; }
-        body.light .tabs { border-color: #ddd; background: #fff; }
-        body.dark .tabs { border-color: #242f3d; background: #17212b; }
-        .tab { padding: 12px 16px; cursor: pointer; font-weight: 500; white-space: nowrap; }
-        body.light .tab { color: #555; }
-        body.dark .tab { color: #8392a1; }
-        .tab.active { color: #6ab3f3; border-bottom: 2px solid #6ab3f3; }
-        .main-panel { display: flex; flex: 1; overflow: hidden; }
-        .sidebar { width: 300px; border-right: 1px solid; overflow-y: auto; }
-        body.light .sidebar { background: #f8f9fa; border-color: #ddd; }
-        body.dark .sidebar { background: #17212b; border-color: #242f3d; }
-        .sidebar-header { padding: 14px 16px; font-weight: 600; }
-        body.light .sidebar-header { color: #111; }
-        body.dark .sidebar-header { color: #fff; }
-        .contact-item { display: flex; align-items: center; gap: 12px; padding: 10px 16px; cursor: pointer; }
-        body.light .contact-item:hover { background: #e9ecef; }
-        body.dark .contact-item:hover { background: #242f3d; }
-        .contact-item.active { background: #2b5278; }
-        .contact-avatar { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; background: #2c3e50; display: flex; align-items: center; justify-content: center; font-size: 24px; overflow: hidden; }
-        .contact-name { flex: 1; }
-        .add-contact { padding: 12px; display: flex; gap: 8px; border-top: 1px solid; }
-        .add-contact input { flex: 1; padding: 8px 12px; border-radius: 20px; border: none; outline: none; }
-        body.light .add-contact input { background: #fff; border: 1px solid #ccc; }
-        body.dark .add-contact input { background: #242f3d; color: #fff; }
-        .add-contact button { background: #6ab3f3; border: none; padding: 0 16px; border-radius: 20px; cursor: pointer; }
-        .chat-area { flex: 1; display: flex; flex-direction: column; background-size: cover; }
-        .chat-header { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid; flex-wrap: wrap; }
-        body.light .chat-header { background: #fff; border-color: #ddd; }
-        body.dark .chat-header { background: #17212b; border-color: #242f3d; }
-        .messages-container { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
-        .message { max-width: 70%; padding: 8px 12px; border-radius: 16px; position: relative; word-wrap: break-word; }
-        .message-mine { align-self: flex-end; background: #2b5278; color: white; border-bottom-right-radius: 4px; }
-        .message-other { align-self: flex-start; background: #17212b; color: #e0e0e0; border-bottom-left-radius: 4px; }
-        .message-sender { font-size: 11px; opacity: 0.7; margin-bottom: 4px; }
-        .message-text { font-size: 14px; }
-        .message-time { font-size: 10px; text-align: right; margin-top: 4px; opacity: 0.6; }
-        .input-area { padding: 12px 16px; display: flex; gap: 12px; align-items: center; border-top: 1px solid; }
-        body.light .input-area { border-color: #ddd; background: #fff; }
-        body.dark .input-area { border-color: #242f3d; background: #17212b; }
-        .input-area input { flex: 1; padding: 10px 14px; border-radius: 24px; border: none; outline: none; }
-        body.light .input-area input { background: #f0f0f0; color: #000; }
-        body.dark .input-area input { background: #242f3d; color: #fff; }
-        .input-area button { background: #6ab3f3; border: none; padding: 0 20px; border-radius: 24px; cursor: pointer; font-weight: bold; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); align-items: center; justify-content: center; z-index: 3000; }
-        .modal-content { background: #17212b; border-radius: 28px; padding: 24px; width: 380px; text-align: center; color: white; max-height: 80%; overflow-y: auto; }
-        .user-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 8px; border-radius: 12px; }
-        body.light .user-row { background: #f0f0f0; color: #000; }
-        body.dark .user-row { background: #242f3d; }
-        .ban-btn { background: #e53935; color: white; border: none; padding: 4px 12px; border-radius: 16px; cursor: pointer; }
-        .unban-btn { background: #43a047; }
-        .delete-msg-btn, .delete-private-btn { background: none; border: none; color: #e53935; cursor: pointer; font-size: 14px; margin-left: 8px; }
-        .splash { position: fixed; top:0; left:0; width:100%; height:100%; background: linear-gradient(135deg, #1a1a2e, #16213e); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; color: white; font-size: 48px; transition: opacity 1s; }
-        .splash h1 { font-size: 64px; background: linear-gradient(45deg, #ff416c, #ff4b2b); -webkit-background-clip: text; background-clip: text; color: transparent; }
-        .splash p { font-size: 20px; margin-top: 20px; opacity: 0.8; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: #0A0C10;
+            color: #FFFFFF;
+            line-height: 1.5;
+            overflow-x: hidden;
+        }
+
+        /* Анимированный фон */
+        .animated-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            background: radial-gradient(circle at 20% 30%, rgba(74, 144, 226, 0.15) 0%, transparent 60%),
+                        radial-gradient(circle at 80% 70%, rgba(50, 205, 176, 0.1) 0%, transparent 60%);
+        }
+
+        /* Плавное появление */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Кнопки */
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            background: linear-gradient(135deg, #FF416C, #FF4B2B);
+            border: none;
+            border-radius: 60px;
+            padding: 14px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
+            box-shadow: 0 8px 20px rgba(255, 65, 108, 0.3);
+        }
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 30px rgba(255, 65, 108, 0.4);
+        }
+        .btn-outline {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 60px;
+            padding: 12px 24px;
+            font-size: 14px;
+            font-weight: 500;
+            color: #FFFFFF;
+            text-decoration: none;
+            transition: border-color 0.2s, background 0.2s;
+        }
+        .btn-outline:hover {
+            border-color: #FF416C;
+            background: rgba(255,65,108,0.1);
+        }
+
+        /* Карточки */
+        .feature-card, .review-card {
+            background: rgba(28, 31, 38, 0.7);
+            backdrop-filter: blur(8px);
+            border-radius: 32px;
+            padding: 32px 24px;
+            transition: transform 0.3s, border-color 0.3s;
+            border: 1px solid rgba(43, 47, 56, 0.8);
+        }
+        .feature-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(74, 144, 226, 0.4);
+        }
+
+        /* Модалка входа */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.8);
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(8px);
+        }
+        .modal-content {
+            background: #1C1F26;
+            border-radius: 32px;
+            padding: 32px;
+            width: 360px;
+            max-width: 90%;
+            text-align: center;
+            color: white;
+        }
+        .login-input {
+            width: 100%;
+            padding: 14px 18px;
+            background: #242f3d;
+            border: none;
+            border-radius: 40px;
+            margin-bottom: 18px;
+            color: white;
+            font-size: 16px;
+        }
+        .language-selector {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 20px;
+        }
+        .lang-btn {
+            background: #242f3d;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .lang-btn.active {
+            background: #FF416C;
+        }
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        section {
+            padding: 80px 0;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #FFFFFF, #6AB3F3);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 36px; }
+            .feature-card { padding: 24px 20px; }
+        }
     </style>
 </head>
 <body>
-<div id="splash" class="splash">
-    <h1>Anti Max</h1>
-    <p>лучшее решение</p>
-</div>
+    <div class="animated-bg"></div>
 
-<script>
-// ========== FIREBASE ==========
-const firebaseConfig = {
-    apiKey: "AIzaSyDYMrTNblBRXUsZoAa30JeSfGgfkXG4-P0",
-    authDomain: "animax-8a0d3.firebaseapp.com",
-    databaseURL: "https://animax-8a0d3-default-rtdb.firebaseio.com",
-    projectId: "animax-8a0d3",
-    storageBucket: "animax-8a0d3.firebasestorage.app",
-    messagingSenderId: "514071748113",
-    appId: "1:514071748113:web:4808891bacf94293d65bb0"
-};
-firebase.initializeApp(firebaseConfig);
-const db = firebase.database();
-
-let currentUser = null;
-let isAdmin = false;
-let currentTab = "global";
-let currentContact = null;
-let globalUnsub = null, privateUnsub = null;
-
-// ========== ИНИЦИАЛИЗАЦИЯ АДМИНА ==========
-async function initAdmin() {
-    const adminSnap = await db.ref('users/admin').once('value');
-    if (!adminSnap.exists()) {
-        await db.ref('users/admin').set({
-            password: "2505",
-            role: "admin",
-            banned: false,
-            avatar: "👑",
-            avatarBase64: null
-        });
-    } else {
-        const data = adminSnap.val();
-        if (data.role !== "admin") await db.ref('users/admin/role').set("admin");
-        if (data.banned === true) await db.ref('users/admin/banned').set(false);
-    }
-}
-
-// ========== ФУНКЦИИ ПОЛЬЗОВАТЕЛЕЙ ==========
-async function registerUser(login, password) {
-    const snap = await db.ref('users/' + login).once('value');
-    if (snap.exists()) return "Логин занят";
-    await db.ref('users/' + login).set({
-        password: password,
-        role: "user",
-        banned: false,
-        avatar: "😀",
-        avatarBase64: null
-    });
-    return "OK";
-}
-async function loginUser(login, password) {
-    const snap = await db.ref('users/' + login).once('value');
-    if (!snap.exists()) return "Пользователь не найден";
-    const user = snap.val();
-    if (user.password !== password) return "Неверный пароль";
-    if (user.banned === true) return "Ваш аккаунт заблокирован администратором";
-    return "OK";
-}
-async function getUserData(login) {
-    const snap = await db.ref('users/' + login).once('value');
-    return snap.val() || { avatar: "😀", avatarBase64: null, banned: false, role: "user" };
-}
-async function getAllUsers() {
-    const snap = await db.ref('users').once('value');
-    const users = snap.val() || {};
-    return Object.keys(users).map(login => ({ login, ...users[login] }));
-}
-async function setUserBan(login, banned) {
-    await db.ref('users/' + login + '/banned').set(banned);
-}
-async function getContacts(login) {
-    const snap = await db.ref('users/' + login + '/contacts').once('value');
-    return snap.val() || [];
-}
-async function addContact(login, contactLogin) {
-    if (login === contactLogin) return "Нельзя добавить себя";
-    const exists = await db.ref('users/' + contactLogin).once('value');
-    if (!exists.exists()) return "Пользователь не найден";
-    let contacts = await getContacts(login);
-    if (contacts.includes(contactLogin)) return "Уже в контактах";
-    contacts.push(contactLogin);
-    await db.ref('users/' + login + '/contacts').set(contacts);
-    return "OK";
-}
-async function removeContact(login, contactLogin) {
-    let contacts = await getContacts(login);
-    contacts = contacts.filter(c => c !== contactLogin);
-    await db.ref('users/' + login + '/contacts').set(contacts);
-}
-async function updateUserAvatar(login, avatarEmoji, avatarBase64) {
-    await db.ref('users/' + login).update({ avatar: avatarEmoji, avatarBase64: avatarBase64 || null });
-}
-
-// ========== СООБЩЕНИЯ ==========
-async function isUserBanned(login) {
-    const snap = await db.ref('users/' + login + '/banned').once('value');
-    return snap.val() === true;
-}
-async function sendGlobalMessage(text) {
-    if (!currentUser) return;
-    if (await isUserBanned(currentUser)) { alert("Вы заблокированы и не можете отправлять сообщения"); return; }
-    if (!text.trim()) return;
-    db.ref('globalMessages').push({ from: currentUser, text: text.trim(), timestamp: Date.now() });
-}
-async function sendPrivateMessage(to, text) {
-    if (!currentUser) return;
-    if (await isUserBanned(currentUser)) { alert("Вы заблокированы и не можете отправлять сообщения"); return; }
-    if (!text.trim()) return;
-    const chatId = [currentUser, to].sort().join('_');
-    db.ref('privateMessages/' + chatId).push({ from: currentUser, to, text: text.trim(), timestamp: Date.now() });
-}
-function listenGlobalMessages(cb) {
-    db.ref('globalMessages').on('value', snap => cb(snap.val() ? Object.values(snap.val()) : []));
-}
-function listenPrivateMessages(otherUser, cb) {
-    const chatId = [currentUser, otherUser].sort().join('_');
-    db.ref('privateMessages/' + chatId).on('value', snap => cb(snap.val() ? Object.values(snap.val()) : []));
-}
-async function deleteGlobalMessage(key) {
-    await db.ref('globalMessages/' + key).remove();
-}
-async function getAllGlobalMessagesWithKeys() {
-    const snap = await db.ref('globalMessages').once('value');
-    const val = snap.val();
-    if (!val) return [];
-    return Object.entries(val).map(([key, msg]) => ({ key, ...msg }));
-}
-async function getAllPrivateMessagesForAdmin() {
-    const snap = await db.ref('privateMessages').once('value');
-    const data = snap.val() || {};
-    const result = [];
-    for (let [chatId, messages] of Object.entries(data)) {
-        for (let [msgKey, msg] of Object.entries(messages)) {
-            result.push({ chatId, msgKey, ...msg });
-        }
-    }
-    return result;
-}
-async function deletePrivateMessage(chatId, msgKey) {
-    await db.ref('privateMessages/' + chatId + '/' + msgKey).remove();
-}
-
-// ========== АДМИН-ПАНЕЛЬ ==========
-async function renderAdminPanel() {
-    const panel = document.getElementById('mainPanel');
-    if (!panel) return;
-    panel.innerHTML = `<div class="chat-area" style="width:100%"><div class="chat-header">👑 Админ-панель</div><div class="messages-container" id="adminContent"></div></div>`;
-    const container = document.getElementById('adminContent');
-    container.innerHTML = '<div style="padding:16px;"><h3>Управление пользователями</h3></div>';
-    const users = await getAllUsers();
-    for (let user of users) {
-        const row = document.createElement('div'); row.className = 'user-row';
-        row.innerHTML = `
-            <div><strong>${escapeHtml(user.login)}</strong> (${user.role}) ${user.banned ? '🔴 Заблокирован' : '🟢 Активен'}</div>
-            <div>${user.banned ? `<button class="ban-btn unban-btn" data-login="${user.login}" data-ban="false">Разблокировать</button>` : `<button class="ban-btn" data-login="${user.login}" data-ban="true">Заблокировать</button>`}</div>
-        `;
-        container.appendChild(row);
-    }
-    document.querySelectorAll('.ban-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const login = btn.dataset.login;
-            const ban = btn.dataset.ban === 'true';
-            await setUserBan(login, ban);
-            renderAdminPanel();
-        });
-    });
-    // Сообщения общего чата
-    const globalMsgs = await getAllGlobalMessagesWithKeys();
-    const globalSection = document.createElement('div');
-    globalSection.innerHTML = '<h3 style="margin-top:20px;">Сообщения общего чата</h3>';
-    for (let msg of globalMsgs) {
-        const msgDiv = document.createElement('div'); msgDiv.className = 'user-row';
-        msgDiv.innerHTML = `
-            <div><strong>${escapeHtml(msg.from)}</strong>: ${escapeHtml(msg.text)} <small>${new Date(msg.timestamp).toLocaleString()}</small></div>
-            <button class="delete-msg-btn" data-key="${msg.key}">🗑 Удалить</button>
-        `;
-        globalSection.appendChild(msgDiv);
-    }
-    container.appendChild(globalSection);
-    document.querySelectorAll('.delete-msg-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const key = btn.dataset.key;
-            if (confirm("Удалить сообщение?")) await deleteGlobalMessage(key);
-            renderAdminPanel();
-        });
-    });
-    // Личные сообщения (админ видит всё)
-    const privateMsgs = await getAllPrivateMessagesForAdmin();
-    const privateSection = document.createElement('div');
-    privateSection.innerHTML = '<h3 style="margin-top:20px;">Личные сообщения (все чаты)</h3>';
-    for (let msg of privateMsgs) {
-        const msgDiv = document.createElement('div'); msgDiv.className = 'user-row';
-        msgDiv.innerHTML = `
-            <div><strong>Чат ${escapeHtml(msg.chatId)}</strong><br><strong>${escapeHtml(msg.from)}</strong> → <strong>${escapeHtml(msg.to)}</strong>: ${escapeHtml(msg.text)} <small>${new Date(msg.timestamp).toLocaleString()}</small></div>
-            <button class="delete-private-btn" data-chat="${msg.chatId}" data-key="${msg.msgKey}">🗑 Удалить</button>
-        `;
-        privateSection.appendChild(msgDiv);
-    }
-    container.appendChild(privateSection);
-    document.querySelectorAll('.delete-private-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const chatId = btn.dataset.chat;
-            const key = btn.dataset.key;
-            if (confirm("Удалить это личное сообщение?")) await deletePrivateMessage(chatId, key);
-            renderAdminPanel();
-        });
-    });
-    // Управление контактами пользователей
-    const contactsSection = document.createElement('div');
-    contactsSection.innerHTML = '<h3 style="margin-top:20px;">Управление контактами пользователей</h3>';
-    for (let user of users) {
-        const userContacts = await getContacts(user.login);
-        if (userContacts.length > 0 || true) {
-            const userDiv = document.createElement('div'); userDiv.style.marginBottom = '12px';
-            userDiv.innerHTML = `<strong>${escapeHtml(user.login)}</strong>: контакты: ${userContacts.map(c => escapeHtml(c)).join(', ') || 'нет'}`;
-            const removeSelect = document.createElement('select'); removeSelect.style.marginLeft = '12px'; removeSelect.style.padding = '4px';
-            const placeholder = document.createElement('option'); placeholder.text = 'Удалить контакт...'; placeholder.disabled = true; placeholder.selected = true;
-            removeSelect.appendChild(placeholder);
-            for (let contact of userContacts) {
-                const opt = document.createElement('option'); opt.value = contact; opt.text = contact; removeSelect.appendChild(opt);
-            }
-            const removeBtn = document.createElement('button'); removeBtn.textContent = 'Удалить'; removeBtn.style.marginLeft = '8px'; removeBtn.className = 'ban-btn';
-            removeBtn.onclick = async () => {
-                const contactToRemove = removeSelect.value;
-                if (contactToRemove && confirm(`Удалить контакт ${contactToRemove} у пользователя ${user.login}?`)) {
-                    await removeContact(user.login, contactToRemove);
-                    renderAdminPanel();
-                }
-            };
-            userDiv.appendChild(removeSelect); userDiv.appendChild(removeBtn);
-            contactsSection.appendChild(userDiv);
-        }
-    }
-    container.appendChild(contactsSection);
-}
-
-// ========== ОБЩИЙ ЧАТ ==========
-function renderGlobalChat() {
-    const panel = document.getElementById('mainPanel');
-    panel.innerHTML = `<div class="chat-area" style="width:100%"><div class="chat-header">🌐 Общий чат</div><div class="messages-container" id="globalMessages"></div><div class="input-area"><input type="text" id="globalInput" placeholder="Сообщение..."><button id="globalSend">➤</button></div></div>`;
-    if (globalUnsub) globalUnsub();
-    globalUnsub = listenGlobalMessages(async (msgs) => {
-        const container = document.getElementById('globalMessages'); if (!container) return;
-        container.innerHTML = '';
-        for (let msg of msgs) {
-            const isMine = msg.from === currentUser;
-            const div = document.createElement('div'); div.className = `message ${isMine ? 'message-mine' : 'message-other'}`;
-            div.innerHTML = `<div class="message-sender">${escapeHtml(msg.from)}</div><div class="message-text">${escapeHtml(msg.text)}</div><div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>`;
-            container.appendChild(div);
-        }
-        container.scrollTop = container.scrollHeight;
-    });
-    document.getElementById('globalSend').onclick = async () => { const inp = document.getElementById('globalInput'); await sendGlobalMessage(inp.value); inp.value = ''; };
-}
-
-// ========== КОНТАКТЫ И ЛИЧКА ==========
-async function renderContactsTab() {
-    const contacts = await getContacts(currentUser);
-    const panel = document.getElementById('mainPanel');
-    panel.innerHTML = `
-        <div class="sidebar">
-            <div class="sidebar-header">Контакты</div>
-            <div id="contactsList"></div>
-            <div class="add-contact"><input id="newContact" placeholder="Логин"><button id="addContactBtn">➕</button></div>
+    <!-- Шапка с языком и кнопкой входа -->
+    <div style="position: fixed; top: 20px; right: 20px; z-index: 100; display: flex; gap: 12px;">
+        <div class="language-selector" style="background: rgba(28,31,38,0.8); padding: 6px 12px; border-radius: 40px;">
+            <button class="lang-btn" data-lang="ru">RU</button>
+            <button class="lang-btn" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="es">ES</button>
+            <button class="lang-btn" data-lang="tr">TR</button>
         </div>
-        <div class="chat-area">
-            <div class="chat-header">
-                <div class="contact-avatar" id="chatAvatar">👤</div>
-                <div><div id="chatName">Выберите чат</div><div id="chatStatus"></div></div>
-            </div>
-            <div class="messages-container" id="privateMessages"></div>
-            <div class="input-area"><input type="text" id="privateInput" placeholder="Сообщение..." disabled><button id="privateSend" disabled>➤</button></div>
-        </div>
-    `;
-    const contactsDiv = document.getElementById('contactsList');
-    if (contacts.length === 0) contactsDiv.innerHTML = '<div style="padding:12px;">Нет контактов</div>';
-    else {
-        for (let contact of contacts) {
-            const userData = await getUserData(contact);
-            const avatarHtml = userData.avatarBase64 ? `<img src="${userData.avatarBase64}" style="width:40px;height:40px;border-radius:50%;">` : `<div style="width:40px;height:40px;border-radius:50%;background:#2c3e50;display:flex;align-items:center;justify-content:center;">${userData.avatar || "😀"}</div>`;
-            const div = document.createElement('div'); div.className = `contact-item ${currentContact === contact ? 'active' : ''}`; div.dataset.contact = contact;
-            div.innerHTML = `<div class="contact-avatar">${avatarHtml}</div><div class="contact-name">${escapeHtml(contact)}</div>`;
-            div.onclick = () => { currentContact = contact; renderContactsTab(); };
-            contactsDiv.appendChild(div);
-        }
-    }
-    document.getElementById('addContactBtn').onclick = async () => {
-        const inp = document.getElementById('newContact');
-        const res = await addContact(currentUser, inp.value.trim());
-        if (res !== "OK") alert(res); else { inp.value = ''; renderContactsTab(); }
-    };
-    if (currentContact) {
-        document.getElementById('privateInput').disabled = false;
-        document.getElementById('privateSend').disabled = false;
-        const userData = await getUserData(currentContact);
-        document.getElementById('chatName').innerText = currentContact;
-        document.getElementById('chatStatus').innerText = userData.banned ? "Заблокирован" : "В сети";
-        document.getElementById('chatAvatar').innerHTML = userData.avatarBase64 ? `<img src="${userData.avatarBase64}" style="width:42px;">` : `<div>${userData.avatar || "😀"}</div>`;
-        if (privateUnsub) privateUnsub();
-        privateUnsub = listenPrivateMessages(currentContact, async (msgs) => {
-            const container = document.getElementById('privateMessages'); if (!container) return;
-            container.innerHTML = '';
-            for (let msg of msgs) {
-                const isMine = msg.from === currentUser;
-                const div = document.createElement('div'); div.className = `message ${isMine ? 'message-mine' : 'message-other'}`;
-                div.innerHTML = `<div class="message-sender">${escapeHtml(msg.from)}</div><div class="message-text">${escapeHtml(msg.text)}</div><div class="message-time">${new Date(msg.timestamp).toLocaleTimeString()}</div>`;
-                container.appendChild(div);
-            }
-            container.scrollTop = container.scrollHeight;
-        });
-        const sendPrivate = async () => { const inp = document.getElementById('privateInput'); await sendPrivateMessage(currentContact, inp.value); inp.value = ''; };
-        document.getElementById('privateSend').onclick = sendPrivate;
-        document.getElementById('privateInput').addEventListener('keypress', (e) => { if(e.key === 'Enter') sendPrivate(); });
-    }
-}
+        <button id="loginHeaderBtn" class="btn-outline" style="background: rgba(28,31,38,0.8);"><i class="fas fa-user"></i> <span data-i18n="login">Войти</span></button>
+    </div>
 
-// ========== ПРОФИЛЬ ==========
-function showProfileModal() {
-    getUserData(currentUser).then(async data => {
-        const modal = document.createElement('div'); modal.className = 'modal'; modal.style.display = 'flex';
-        modal.innerHTML = `<div class="modal-content"><h3>Профиль</h3><div id="profileAvatar">${data.avatarBase64 ? `<img src="${data.avatarBase64}" style="width:80px;border-radius:50%;">` : `<div style="font-size:64px;">${data.avatar || "😀"}</div>`}</div><input type="file" id="avatarFile" accept="image/*"><div>Эмодзи:</div><div id="emojiSelect">${["😀","😎","🥷","🐱","🐶","🦊","🐼","🤖"].map(e => `<span style="font-size:32px;cursor:pointer;" data-emoji="${e}">${e}</span>`).join('')}</div><button id="saveProfile">Сохранить</button><button id="closeProfile">Закрыть</button></div>`;
-        document.body.appendChild(modal);
-        let selectedEmoji = data.avatar, selectedBase64 = data.avatarBase64;
-        document.getElementById('avatarFile').onchange = (e) => { const file = e.target.files[0]; if(file) { const reader = new FileReader(); reader.onload = (ev) => { selectedBase64 = ev.target.result; document.getElementById('profileAvatar').innerHTML = `<img src="${selectedBase64}" style="width:80px;border-radius:50%;">`; }; reader.readAsDataURL(file); } };
-        document.querySelectorAll('#emojiSelect span').forEach(span => { span.onclick = () => { selectedEmoji = span.dataset.emoji; document.getElementById('profileAvatar').innerHTML = `<div style="font-size:64px;">${selectedEmoji}</div>`; selectedBase64 = null; }; });
-        document.getElementById('saveProfile').onclick = async () => { await updateUserAvatar(currentUser, selectedEmoji || "😀", selectedBase64); alert("Аватар обновлён"); modal.remove(); if(currentTab === 'contacts') renderContactsTab(); };
-        document.getElementById('closeProfile').onclick = () => modal.remove();
-    });
-}
-
-// ========== ОСНОВНОЙ UI ==========
-function renderApp() {
-    const appDiv = document.getElementById('app');
-    appDiv.innerHTML = `
-        <div class="app">
-            <div class="header">
-                <div class="logo">Anti Max</div>
-                <div class="user-info">
-                    <button class="tg-btn" id="themeBtn">🎨 Тема</button>
-                    <button class="tg-btn" id="profileBtn">👤 Профиль</button>
-                    <button class="tg-btn" id="logoutBtn">🚪 Выйти</button>
+    <!-- Герой секция -->
+    <section class="hero" style="min-height: 100vh; display: flex; align-items: center;">
+        <div class="container">
+            <div class="fade-up" style="max-width: 700px; margin: 0 auto; text-align: center;">
+                <div style="width: 80px; height: 80px; background: linear-gradient(135deg, #FF416C, #FF4B2B); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 24px; font-size: 40px; font-weight: bold; box-shadow: 0 0 30px rgba(255,65,108,0.5);">AM</div>
+                <h1 style="font-size: 56px; font-weight: 800; margin-bottom: 20px;"><span data-i18n="hero_title">Anti Max</span> <span class="gradient-text" data-i18n="hero_subtitle">мессенджер</span><br data-i18n="hero_break"><span data-i18n="hero_tagline">без границ</span></h1>
+                <p style="font-size: 18px; color: #8E8E93; max-width: 600px; margin: 0 auto 32px;" data-i18n="hero_desc">Безопасное общение с шифрованием, файлы, голосовые и видео, стикеры и полная синхронизация.</p>
+                <div style="display: flex; flex-wrap: wrap; gap: 16px; justify-content: center;">
+                    <a href="https://lurikan.github.io/antimaxv2/" class="btn-primary" target="_blank">
+                        <i class="fas fa-arrow-right"></i> <span data-i18n="go_to_messenger">Перейти в мессенджер</span>
+                    </a>
+                    <a href="#features" class="btn-outline">
+                        <i class="fas fa-chevron-down"></i> <span data-i18n="learn_more">Узнать больше</span>
+                    </a>
                 </div>
             </div>
-            <div class="tabs" id="tabsContainer"></div>
-            <div class="main-panel" id="mainPanel"></div>
         </div>
-    `;
-    const tabsContainer = document.getElementById('tabsContainer');
-    const tabs = [
-        { id: "global", name: "🌐 Общий чат" },
-        { id: "contacts", name: "💬 Контакты" }
-    ];
-    if (isAdmin) tabs.push({ id: "admin", name: "👑 Админ" });
-    tabsContainer.innerHTML = tabs.map(tab => `<div class="tab ${currentTab === tab.id ? 'active' : ''}" data-tab="${tab.id}">${tab.name}</div>`).join('');
-    document.querySelectorAll('.tab').forEach(tab => {
-        tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-    });
-    document.getElementById('themeBtn').onclick = () => { document.body.classList.toggle('light'); document.body.classList.toggle('dark'); };
-    document.getElementById('profileBtn').onclick = showProfileModal;
-    document.getElementById('logoutBtn').onclick = logout;
-    if (currentTab === 'global') renderGlobalChat();
-    else if (currentTab === 'contacts') renderContactsTab();
-    else if (currentTab === 'admin' && isAdmin) renderAdminPanel();
-}
+    </section>
 
-function switchTab(tab) {
-    currentTab = tab;
-    if (globalUnsub) globalUnsub();
-    if (privateUnsub) privateUnsub();
-    if (tab === 'global') { globalUnsub = null; renderApp(); }
-    else if (tab === 'contacts') { privateUnsub = null; renderApp(); }
-    else if (tab === 'admin' && isAdmin) renderApp();
-}
+    <!-- Преимущества -->
+    <section id="features">
+        <div class="container">
+            <div class="fade-up" style="text-align: center; margin-bottom: 60px;">
+                <h2 style="font-size: 36px; font-weight: 700; margin-bottom: 16px;" data-i18n="features_title">Почему именно Anti Max?</h2>
+                <p style="color: #8E8E93; max-width: 600px; margin: 0 auto;" data-i18n="features_subtitle">Современный подход к приватности и удобству</p>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px;">
+                <div class="feature-card fade-up">
+                    <div style="width: 56px; height: 56px; background: rgba(74, 144, 226, 0.2); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;"><i class="fas fa-shield-alt" style="font-size: 28px; color: #4A90E2;"></i></div>
+                    <h3 style="font-size: 22px; font-weight: 600; margin-bottom: 12px;" data-i18n="feat1_title">Полная приватность</h3>
+                    <p style="color: #8E8E93;" data-i18n="feat1_desc">Сквозное шифрование, отсутствие сбора данных, вход без номера телефона. Секретные чаты с автоуничтожением сообщений.</p>
+                </div>
+                <div class="feature-card fade-up">
+                    <div style="width: 56px; height: 56px; background: rgba(50, 205, 176, 0.2); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;"><i class="fas fa-cloud-upload-alt" style="font-size: 28px; color: #32CDB0;"></i></div>
+                    <h3 style="font-size: 22px; font-weight: 600; margin-bottom: 12px;" data-i18n="feat2_title">Облачная синхронизация</h3>
+                    <p style="color: #8E8E93;" data-i18n="feat2_desc">Все чаты и файлы доступны на любом устройстве. История сообщений всегда при вас.</p>
+                </div>
+                <div class="feature-card fade-up">
+                    <div style="width: 56px; height: 56px; background: rgba(255, 65, 108, 0.2); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;"><i class="fas fa-file-alt" style="font-size: 28px; color: #FF416C;"></i></div>
+                    <h3 style="font-size: 22px; font-weight: 600; margin-bottom: 12px;" data-i18n="feat3_title">Обмен файлами</h3>
+                    <p style="color: #8E8E93;" data-i18n="feat3_desc">Отправляйте фото, видео, документы, голосовые сообщения. Загрузка до 10 МБ.</p>
+                </div>
+                <div class="feature-card fade-up">
+                    <div style="width: 56px; height: 56px; background: rgba(106, 179, 243, 0.2); border-radius: 20px; display: flex; align-items: center; justify-content: center; margin-bottom: 24px;"><i class="fas fa-magic" style="font-size: 28px; color: #6AB3F3;"></i></div>
+                    <h3 style="font-size: 22px; font-weight: 600; margin-bottom: 12px;" data-i18n="feat4_title">ИИ-ассистент Stint</h3>
+                    <p style="color: #8E8E93;" data-i18n="feat4_desc">Встроенный помощник в общем чате — отвечает на вопросы, помогает и развлекает.</p>
+                </div>
+            </div>
+        </div>
+    </section>
 
-async function logout() {
-    if (globalUnsub) globalUnsub();
-    if (privateUnsub) privateUnsub();
-    currentUser = null;
-    isAdmin = false;
-    showLoginModal();
-}
+    <!-- Блок звёзд и баланса (показывается после входа) -->
+    <section id="starsSection" style="display: none;">
+        <div class="container">
+            <div class="fade-up" style="text-align: center; background: rgba(0,0,0,0.3); border-radius: 48px; padding: 40px;">
+                <h2 style="font-size: 32px; margin-bottom: 16px;" data-i18n="your_balance">Ваш баланс</h2>
+                <div style="font-size: 64px; font-weight: 800; background: linear-gradient(135deg, #FFD700, #FFA500); -webkit-background-clip: text; background-clip: text; color: transparent;" id="starBalanceDisplay">0</div>
+                <p style="margin-top: 16px; color: #8E8E93;" data-i18n="stars_desc">NavalnyStar — внутренняя валюта для покупки Premium и подарков</p>
+                <div style="margin-top: 24px;">
+                    <a href="https://lurikan.github.io/antimaxv2/" class="btn-primary" target="_blank">
+                        <i class="fas fa-arrow-right"></i> <span data-i18n="open_messenger">Открыть мессенджер</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
 
-// ========== ВХОД ==========
-function showLoginModal() {
-    const modal = document.createElement('div'); modal.className = 'modal'; modal.style.display = 'flex';
-    modal.innerHTML = `<div class="modal-content"><h2>Anti Max</h2><div id="loginForm"><input type="text" id="loginName" placeholder="Логин"><input type="password" id="loginPass" placeholder="Пароль"><button id="doLogin">Войти</button><a href="#" id="toReg">Регистрация</a><div id="loginError"></div></div><div id="regForm" style="display:none"><input type="text" id="regName" placeholder="Логин"><input type="password" id="regPass" placeholder="Пароль"><button id="doReg">Зарегистрироваться</button><a href="#" id="toLogin">Вход</a><div id="regError"></div></div></div>`;
-    document.body.appendChild(modal);
-    const loginDiv = document.getElementById('loginForm'), regDiv = document.getElementById('regForm');
-    document.getElementById('toReg').onclick = (e) => { e.preventDefault(); loginDiv.style.display='none'; regDiv.style.display='block'; };
-    document.getElementById('toLogin').onclick = (e) => { e.preventDefault(); loginDiv.style.display='block'; regDiv.style.display='none'; };
-    document.getElementById('doLogin').onclick = async () => {
-        const login = document.getElementById('loginName').value.trim();
-        const pass = document.getElementById('loginPass').value.trim();
-        if (login === 'admin' && pass === '2505') {
-            await initAdmin();
-            const res = await loginUser('admin', '2505');
-            if (res === "OK") {
-                currentUser = 'admin';
-                isAdmin = true;
-                modal.remove();
-                document.body.classList.add('dark');
-                renderApp();
-                return;
-            }
+    <!-- Отзывы -->
+    <section>
+        <div class="container">
+            <div class="fade-up" style="text-align: center; margin-bottom: 60px;">
+                <h2 style="font-size: 36px; font-weight: 700; margin-bottom: 16px;" data-i18n="reviews_title">Что говорят пользователи</h2>
+                <p style="color: #8E8E93;" data-i18n="reviews_subtitle">Уже более 1000 активных пользователей</p>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px;">
+                <div class="review-card fade-up">
+                    <i class="fas fa-star" style="color: #FFD700; margin-bottom: 16px; display: block;"></i>
+                    <p style="font-style: italic;" data-i18n="review1_text">"Лучший мессенджер за последнее время! Стикеры, премиум, всё работает без лагов. Советую!"</p>
+                    <p style="margin-top: 20px; font-weight: 600;">— Алексей</p>
+                </div>
+                <div class="review-card fade-up">
+                    <i class="fas fa-star" style="color: #FFD700; margin-bottom: 16px; display: block;"></i>
+                    <p style="font-style: italic;" data-i18n="review2_text">"Приятный интерфейс, как у Telegram, но с уникальными фишками. Отдельное спасибо за ИИ Stint!"</p>
+                    <p style="margin-top: 20px; font-weight: 600;">— Екатерина</p>
+                </div>
+                <div class="review-card fade-up">
+                    <i class="fas fa-star" style="color: #FFD700; margin-bottom: 16px; display: block;"></i>
+                    <p style="font-style: italic;" data-i18n="review3_text">"Облачная синхронизация супер. Переписываюсь с ПК и телефона — всё мгновенно."</p>
+                    <p style="margin-top: 20px; font-weight: 600;">— Дмитрий</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Призыв -->
+    <section style="padding: 80px 0;">
+        <div class="container">
+            <div class="fade-up" style="text-align: center; max-width: 700px; margin: 0 auto;">
+                <h2 style="font-size: 34px; font-weight: 800; margin-bottom: 20px;" data-i18n="cta_title">Начните общаться по‑новому</h2>
+                <p style="color: #8E8E93; margin-bottom: 32px;" data-i18n="cta_desc">Присоединяйтесь к сообществу Anti Max. Безопасно, быстро и удобно.</p>
+                <a href="https://lurikan.github.io/antimaxv2/" class="btn-primary" style="padding: 16px 40px; font-size: 18px;" target="_blank">
+                    <i class="fas fa-arrow-right"></i> <span data-i18n="go_to_messenger">Перейти в мессенджер</span>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer style="border-top: 1px solid rgba(43, 47, 56, 0.5); padding: 40px 20px; text-align: center;">
+        <div class="container">
+            <p style="color: #8E8E93; font-size: 14px;">© 2025 Anti Max. <span data-i18n="rights">Все права защищены.</span></p>
+        </div>
+    </footer>
+
+    <!-- Модалка входа -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h3 data-i18n="login_title">Вход в аккаунт</h3>
+            <input type="text" id="loginUsername" class="login-input" placeholder="Логин">
+            <input type="password" id="loginPassword" class="login-input" placeholder="Пароль">
+            <button id="doLoginBtn" class="btn-primary" style="width: 100%;"><span data-i18n="login_btn">Войти</span></button>
+            <button id="toRegBtn" class="btn-outline" style="margin-top: 12px;"><span data-i18n="register_btn">Регистрация</span></button>
+            <div id="loginError" style="color: #e53935; margin-top: 12px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // ========== Firebase ==========
+        const firebaseConfig = {
+            apiKey: "AIzaSyDYMrTNblBRXUsZoAa30JeSfGgfkXG4-P0",
+            authDomain: "animax-8a0d3.firebaseapp.com",
+            databaseURL: "https://animax-8a0d3-default-rtdb.firebaseio.com",
+            projectId: "animax-8a0d3",
+            storageBucket: "animax-8a0d3.firebasestorage.app",
+            messagingSenderId: "514071748113",
+            appId: "1:514071748113:web:4808891bacf94293d65bb0"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let currentUser = null;
+
+        async function getUserStars(login) {
+            const snap = await db.ref('users/' + login + '/stars').once('value');
+            return snap.val() || 0;
         }
-        const res = await loginUser(login, pass);
-        if (res === "OK") {
-            currentUser = login;
-            isAdmin = false;
-            modal.remove();
-            document.body.classList.add('dark');
-            renderApp();
-        } else document.getElementById('loginError').innerText = res;
-    };
-    document.getElementById('doReg').onclick = async () => {
-        const login = document.getElementById('regName').value.trim();
-        const pass = document.getElementById('regPass').value.trim();
-        const res = await registerUser(login, pass);
-        if (res === "OK") { alert("Регистрация успешна! Войдите."); loginDiv.style.display='block'; regDiv.style.display='none'; }
-        else document.getElementById('regError').innerText = res;
-    };
-}
 
-function escapeHtml(str) { return str.replace(/[&<>]/g, m => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;' }[m])); }
+        async function loginUser(login, password) {
+            const snap = await db.ref('users/' + login).once('value');
+            if (!snap.exists()) return "Пользователь не найден";
+            if (snap.val().password !== password) return "Неверный пароль";
+            if (snap.val().banned) return "Аккаунт заблокирован";
+            return "OK";
+        }
 
-// ========== СТАРТ С ЗАСТАВКОЙ ==========
-const appDiv = document.createElement('div'); appDiv.id = 'app'; document.body.appendChild(appDiv);
-appDiv.style.display = 'none';
-setTimeout(() => {
-    const splash = document.getElementById('splash');
-    if (splash) splash.style.opacity = '0';
-    setTimeout(() => {
-        if (splash) splash.remove();
-        appDiv.style.display = 'block';
-        initAdmin().then(() => showLoginModal());
-    }, 1000);
-}, 5000);
-</script>
+        async function registerUser(login, password) {
+            if (await db.ref('users/' + login).once('value').then(s=>s.exists())) return "Логин занят";
+            await db.ref('users/' + login).set({ password, role: "user", avatar: "😀", stars: 0, displayName: login });
+            return "OK";
+        }
+
+        // ========== Локализация ==========
+        const translations = {
+            ru: {
+                login: "Войти", hero_title: "Anti Max", hero_subtitle: "мессенджер", hero_tagline: "без границ",
+                hero_desc: "Безопасное общение с шифрованием, файлы, голосовые и видео, стикеры и полная синхронизация.",
+                go_to_messenger: "Перейти в мессенджер", learn_more: "Узнать больше", features_title: "Почему именно Anti Max?",
+                features_subtitle: "Современный подход к приватности и удобству", feat1_title: "Полная приватность",
+                feat1_desc: "Сквозное шифрование, отсутствие сбора данных, вход без номера телефона. Секретные чаты с автоуничтожением сообщений.",
+                feat2_title: "Облачная синхронизация", feat2_desc: "Все чаты и файлы доступны на любом устройстве. История сообщений всегда при вас.",
+                feat3_title: "Обмен файлами", feat3_desc: "Отправляйте фото, видео, документы, голосовые сообщения. Загрузка до 10 МБ.",
+                feat4_title: "ИИ-ассистент Stint", feat4_desc: "Встроенный помощник в общем чате — отвечает на вопросы, помогает и развлекает.",
+                your_balance: "Ваш баланс", stars_desc: "NavalnyStar — внутренняя валюта для покупки Premium и подарков",
+                open_messenger: "Открыть мессенджер", reviews_title: "Что говорят пользователи", reviews_subtitle: "Уже более 1000 активных пользователей",
+                review1_text: "\"Лучший мессенджер за последнее время! Стикеры, премиум, всё работает без лагов. Советую!\"",
+                review2_text: "\"Приятный интерфейс, как у Telegram, но с уникальными фишками. Отдельное спасибо за ИИ Stint!\"",
+                review3_text: "\"Облачная синхронизация супер. Переписываюсь с ПК и телефона — всё мгновенно.\"",
+                cta_title: "Начните общаться по‑новому", cta_desc: "Присоединяйтесь к сообществу Anti Max. Безопасно, быстро и удобно.",
+                rights: "Все права защищены.", login_title: "Вход в аккаунт", login_btn: "Войти", register_btn: "Регистрация"
+            },
+            en: {
+                login: "Login", hero_title: "Anti Max", hero_subtitle: "messenger", hero_tagline: "without borders",
+                hero_desc: "Secure communication with encryption, files, voice and video, stickers and full synchronization.",
+                go_to_messenger: "Go to messenger", learn_more: "Learn more", features_title: "Why Anti Max?",
+                features_subtitle: "A modern approach to privacy and convenience", feat1_title: "Full privacy",
+                feat1_desc: "End-to-end encryption, no data collection, login without phone number. Secret chats with self-destruct.",
+                feat2_title: "Cloud sync", feat2_desc: "All chats and files available on any device. Message history always with you.",
+                feat3_title: "File sharing", feat3_desc: "Send photos, videos, documents, voice messages. Upload up to 10 MB.",
+                feat4_title: "AI assistant Stint", feat4_desc: "Built-in assistant in the common chat — answers questions, helps and entertains.",
+                your_balance: "Your balance", stars_desc: "NavalnyStar — internal currency for purchasing Premium and gifts",
+                open_messenger: "Open messenger", reviews_title: "What users say", reviews_subtitle: "Over 1000 active users",
+                review1_text: "\"The best messenger in a long time! Stickers, premium, everything works without lags. I recommend!\"",
+                review2_text: "\"Nice interface, like Telegram, but with unique features. Special thanks for AI Stint!\"",
+                review3_text: "\"Cloud sync is super. I chat from PC and phone — everything is instant.\"",
+                cta_title: "Start communicating in a new way", cta_desc: "Join the Anti Max community. Safe, fast and convenient.",
+                rights: "All rights reserved.", login_title: "Login to account", login_btn: "Login", register_btn: "Register"
+            },
+            es: {
+                login: "Iniciar sesión", hero_title: "Anti Max", hero_subtitle: "mensajería", hero_tagline: "sin fronteras",
+                hero_desc: "Comunicación segura con cifrado, archivos, voz y video, pegatinas y sincronización completa.",
+                go_to_messenger: "Ir al mensajero", learn_more: "Más información", features_title: "¿Por qué Anti Max?",
+                features_subtitle: "Enfoque moderno de privacidad y comodidad", feat1_title: "Privacidad total",
+                feat1_desc: "Cifrado de extremo a extremo, sin recopilación de datos, inicio de sesión sin número de teléfono. Chats secretos con autodestrucción.",
+                feat2_title: "Sincronización en la nube", feat2_desc: "Todos los chats y archivos disponibles en cualquier dispositivo. El historial siempre contigo.",
+                feat3_title: "Intercambio de archivos", feat3_desc: "Envía fotos, videos, documentos, mensajes de voz. Subida de hasta 10 MB.",
+                feat4_title: "Asistente de IA Stint", feat4_desc: "Asistente integrado en el chat común: responde preguntas, ayuda y entretiene.",
+                your_balance: "Tu saldo", stars_desc: "NavalnyStar — moneda interna para comprar Premium y regalos",
+                open_messenger: "Abrir mensajero", reviews_title: "Lo que dicen los usuarios", reviews_subtitle: "Más de 1000 usuarios activos",
+                review1_text: "\"¡El mejor mensajero en mucho tiempo! Pegatinas, premium, todo funciona sin retrasos. ¡Lo recomiendo!\"",
+                review2_text: "\"Interfaz agradable, como Telegram, pero con características únicas. ¡Gracias especiales por AI Stint!\"",
+                review3_text: "\"La sincronización en la nube es súper. Chateo desde PC y teléfono — todo es instantáneo.\"",
+                cta_title: "Empieza a comunicarte de una nueva manera", cta_desc: "Únete a la comunidad de Anti Max. Seguro, rápido y conveniente.",
+                rights: "Todos los derechos reservados.", login_title: "Iniciar sesión en la cuenta", login_btn: "Iniciar sesión", register_btn: "Registrarse"
+            },
+            tr: {
+                login: "Giriş yap", hero_title: "Anti Max", hero_subtitle: "mesajlaşma", hero_tagline: "sınırsız",
+                hero_desc: "Şifreleme, dosyalar, sesli ve görüntülü, çıkartmalar ve tam senkronizasyon ile güvenli iletişim.",
+                go_to_messenger: "Mesajlaşmaya git", learn_more: "Daha fazla bilgi", features_title: "Neden Anti Max?",
+                features_subtitle: "Gizlilik ve rahatlığa modern yaklaşım", feat1_title: "Tam gizlilik",
+                feat1_desc: "Uçtan uca şifreleme, veri toplama yok, telefon numarası olmadan giriş. Kendini imha eden gizli sohbetler.",
+                feat2_title: "Bulut senkronizasyonu", feat2_desc: "Tüm sohbetler ve dosyalar her cihazda kullanılabilir. Mesaj geçmişi her zaman yanınızda.",
+                feat3_title: "Dosya paylaşımı", feat3_desc: "Fotoğraf, video, belge, sesli mesaj gönderin. 10 MB'a kadar yükleme.",
+                feat4_title: "Yapay zeka asistanı Stint", feat4_desc: "Ortak sohbette yerleşik asistan — soruları yanıtlar, yardımcı olur ve eğlendirir.",
+                your_balance: "Bakiyeniz", stars_desc: "NavalnyStar — Premium ve hediyeler satın almak için iç para birimi",
+                open_messenger: "Mesajlaşmayı aç", reviews_title: "Kullanıcılar ne diyor", reviews_subtitle: "1000'den fazla aktif kullanıcı",
+                review1_text: "\"Uzun zamandır en iyi mesajlaşma uygulaması! Çıkartmalar, premium, her şey gecikmesiz çalışıyor. Tavsiye ederim!\"",
+                review2_text: "\"Telegram gibi güzel arayüz, ancak benzersiz özelliklerle. AI Stint için özel teşekkürler!\"",
+                review3_text: "\"Bulut senkronizasyonu süper. PC ve telefondan yazışıyorum — her şey anında.\"",
+                cta_title: "Yeni bir şekilde iletişim kurmaya başlayın", cta_desc: "Anti Max topluluğuna katılın. Güvenli, hızlı ve kullanışlı.",
+                rights: "Tüm hakları saklıdır.", login_title: "Hesaba giriş yap", login_btn: "Giriş yap", register_btn: "Kayıt ol"
+            }
+        };
+        let currentLang = localStorage.getItem('lang') || 'ru';
+
+        function updateLanguage() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[currentLang] && translations[currentLang][key]) {
+                    if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') el.placeholder = translations[currentLang][key];
+                    else el.innerHTML = translations[currentLang][key];
+                }
+            });
+            document.querySelectorAll('.lang-btn').forEach(btn => {
+                if (btn.dataset.lang === currentLang) btn.classList.add('active');
+                else btn.classList.remove('active');
+            });
+        }
+        document.querySelectorAll('.lang-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentLang = btn.dataset.lang;
+                localStorage.setItem('lang', currentLang);
+                updateLanguage();
+            });
+        });
+        updateLanguage();
+
+        // ========== Логика входа ==========
+        const loginModal = document.getElementById('loginModal');
+        const loginHeaderBtn = document.getElementById('loginHeaderBtn');
+        const starsSection = document.getElementById('starsSection');
+
+        loginHeaderBtn.addEventListener('click', () => { loginModal.style.display = 'flex'; });
+        document.getElementById('doLoginBtn').onclick = async () => {
+            const login = document.getElementById('loginUsername').value.trim();
+            const pass = document.getElementById('loginPassword').value.trim();
+            if (!login || !pass) { document.getElementById('loginError').innerText = "Заполните поля"; return; }
+            const res = await loginUser(login, pass);
+            if (res === "OK") {
+                currentUser = login;
+                const stars = await getUserStars(login);
+                document.getElementById('starBalanceDisplay').innerText = stars;
+                starsSection.style.display = 'block';
+                loginModal.style.display = 'none';
+                document.getElementById('loginUsername').value = '';
+                document.getElementById('loginPassword').value = '';
+                loginHeaderBtn.innerHTML = `<i class="fas fa-user-check"></i> ${currentUser}`;
+            } else {
+                document.getElementById('loginError').innerText = res;
+            }
+        };
+        document.getElementById('toRegBtn').onclick = async () => {
+            const login = prompt("Придумайте логин");
+            const pass = prompt("Придумайте пароль");
+            if (login && pass) {
+                const res = await registerUser(login, pass);
+                alert(res === "OK" ? "Регистрация успешна! Теперь войдите." : res);
+            }
+        };
+
+        // Закрытие модалки по клику вне
+        loginModal.addEventListener('click', (e) => { if (e.target === loginModal) loginModal.style.display = 'none'; });
+
+        // Анимация появления
+        const fadeElements = document.querySelectorAll('.fade-up');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        fadeElements.forEach(el => observer.observe(el));
+    </script>
 </body>
 </html>
